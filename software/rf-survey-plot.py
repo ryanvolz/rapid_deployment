@@ -12,13 +12,13 @@ plot_opts = {
 'histogram': {'use_log': True, 'bins': '128'}
 }
 
-chans = ['cha','chb']
-
 parser = ArgumentParser()
 parser.add_argument('dir')
 parser.add_argument('-t', dest='plot_time', default='1000')
 parser.add_argument('-s', dest='save_dir', default='')
 args = parser.parse_args()
+
+chans = sorted(os.listdir(args.dir))
 
 #plot_cmd = '~/midasmicro/digital_rf/drf_plot.py'
 plot_cmd = 'drf_plot.py'
@@ -43,7 +43,7 @@ for chan in chans:
         start_time = datetime.datetime.utcfromtimestamp(time/sfreq)
         start_time_string = start_time.isoformat()
         md = mdt[time]
-        cfreq = int(md['center_frequencies'].tolist()[0][0])
+        cfreq = int(md['center_frequencies'].ravel()[0])
         print "cfreq: " + str(cfreq)
         print "sfreq: " + str(sfreq)
         num_samples = int(sfreq*int(args.plot_time)/1000)
@@ -61,7 +61,7 @@ sample_range, '-c', chan_string, '-a', start_time_string])
                 command_line += ' -b ' + opts['num_bins']
             if args.save_dir != "":
                 fname = '_'.join([plot_type,chan,str(cfreq)])
-                command_line += ' -s ' + args.save_dir + fname + '.png'
+                command_line += ' -s ' + os.path.join(args.save_dir, fname + '.png')
             print command_line
             #rtn = 0
             #i += 1
