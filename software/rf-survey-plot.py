@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import os
-import digital_metadata as dmd
+import digital_rf as drf
 import datetime
 
 plot_opts = {
@@ -21,11 +21,11 @@ parser.add_argument('-s', dest='save_dir', default='')
 args = parser.parse_args()
 
 #plot_cmd = '~/midasmicro/digital_rf/drf_plot.py'
-plot_cmd = 'python ~/rapid_deployment/software/drf_plot.py'
+plot_cmd = 'drf_plot.py'
 i = 0
 for chan in chans:
     chan_string = chan + ':0'
-    mdf = dmd.read_digital_metadata(args.dir + chan + '/metadata')
+    mdf = drf.DigitalMetadataReader(args.dir + chan + '/metadata')
 
     mdbounds = mdf.get_bounds()
     print mdbounds
@@ -52,7 +52,7 @@ for chan in chans:
             opts = plot_opts[plot_type]
             command_line = ' '.join([plot_cmd, '-i', args.dir, '-p', plot_type, '-r', \
 sample_range, '-c', chan_string, '-a', start_time_string])
-            
+
             if 'use_log' in opts.keys() and opts['use_log']:
                 command_line += ' -l'
             if 'dynamic_range' in opts.keys():

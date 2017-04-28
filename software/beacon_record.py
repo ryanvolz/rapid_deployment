@@ -1,34 +1,8 @@
-"""
-Script:
-    ephemeris_data.py
-DESCRIPTION:
-    Script to find out information of a satellite using PyEphem.
+"""Record beacon signals of specified satellites in Digital RF.
 
-    Things such as the satellite's latitude, longitude, right ascention,
-    declination and elevation at a given time are calculated. Also the range,
-    range_velocity, azimuth and altitude relative to an observer are calculated.
+Satellite and recording parameters are specified in .ini configuration files.
+Example configurations are included along with this script.
 
-    This script requires the observer's latitude, longitude, and elevation as
-    well as the satellite's name, tle line 1 and 2.
-
-    The frequency of the beacon on the satellite is also helpful since it allows
-    for a doppler shift plot to be generated.
-
-    A time and an interval should be passed in. The time will be used to calculate
-    the next closest rise of the satellite and the interval is used to sample
-    between the rise and set time to find the various range velocities.
-
-    All parameters are read in from a file.
-ALGORITHM:
-    None
-EXCEPTIONS:
-    None
-DEPENDENCIES:
-    re, time, math, ephem, pylab
-NOTE:
-    test() requires pylab, SignalGenerator.py
-
-$Id: ephemeris_data.py 11507 2017-01-10 16:53:50Z flind $
 """
 
 import sys
@@ -36,7 +10,6 @@ import os
 import traceback
 import subprocess
 import string
-import re
 import time
 import datetime
 import dateutil.parser
@@ -44,11 +17,10 @@ import pytz
 import math
 import numpy
 import ephem
-import pylab
 import optparse
 import ConfigParser
 
-import digital_metadata as dmd
+from digital_rf import DigitalMetadataWriter
 
 class ExceptionString(Exception):
     """ Simple exception handling string """
@@ -608,7 +580,7 @@ def ephemeris_passes(opt, st0, et0):
                             except:
                                 pass
 
-                            md_site_obj = dmd.write_digital_metadata(mdata_dir + '/config/%s' % (k), 3600, 60, 1.0, k)
+                            md_site_obj = DigitalMetadataWriter(mdata_dir + '/config/%s' % (k), 3600, 60, 1, 1, k)
 
                             if opt.debug:
                                 print site[k]
@@ -624,7 +596,7 @@ def ephemeris_passes(opt, st0, et0):
                         except:
                             pass
 
-                        md_info_obj = dmd.write_digital_metadata(mdata_dir + '/info', 3600, 60, 1.0, 'info')
+                        md_info_obj = DigitalMetadataWriter(mdata_dir + '/info', 3600, 60, 1, 1, 'info')
 
                         if opt.verbose:
                             print "# writing metadata info"
@@ -640,7 +612,7 @@ def ephemeris_passes(opt, st0, et0):
                         except:
                             pass
 
-                        md_pass_obj = dmd.write_digital_metadata(mdata_dir + '/pass', 3600, 60, 1.0, 'pass')
+                        md_pass_obj = DigitalMetadataWriter(mdata_dir + '/pass', 3600, 60, 1, 1, 'pass')
 
                         if opt.verbose:
                             print "# writing metadata pass"
@@ -690,12 +662,12 @@ def parse_command_line():
     parser.add_option("-b", "--bash",action="store_true",
                       dest="schedule", default=False,help="create schedule file for bash shell based command / control.")
     parser.add_option("-m","--mask",dest="el_mask",type=float,default=0.0,help="mask all passes below the provided elevation.")
-    parser.add_option("-c", "--config",dest="config",default='beacons.ini',help="Use configuration file <config>.")
+    parser.add_option("-c", "--config",dest="config",default='config/beacons.ini',help="Use configuration file <config>.")
     parser.add_option("-f", "--foreground",action="store_true",dest="foreground",help="Execute schedule in foreground.")
     parser.add_option("-s", "--starttime",dest="starttime",help="Start time in ISO8601 format, e.g. 2016-01-01T15:24:00Z")
     parser.add_option("-e", "--endtime",dest="endtime",help="End time in ISO8601 format, e.g. 2016-01-01T16:24:00Z")
     parser.add_option("-i", "--interval",dest="interval",type=float,default=10.0,help="Sampling interval for ephemeris predictions, default is 10 seconds.")
-    parser.add_option("-r", "--radio",dest="site",default='site.ini',help="Radio site configuration file.")
+    parser.add_option("-r", "--radio",dest="site",default='config/site.ini',help="Radio site configuration file.")
 
     (options, args) = parser.parse_args()
 

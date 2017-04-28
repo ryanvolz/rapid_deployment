@@ -1,4 +1,4 @@
-# Perform a survey over a range of frequncies and record data in DifitalRF format using thor3
+# Perform a survey over a range of frequncies and record data in DigitalRF format using thor
 # 2017 Gregory Allan
 
 import time
@@ -18,7 +18,7 @@ parser.add_argument('-g', dest='gain', default='0')
 
 op = parser.parse_args()
 
-thorcommand = "thor3.py"
+thorcommand = "thor.py"
 #start_freq = 50e6
 #end_freq = 860e6
 #interval = 4e6
@@ -39,5 +39,5 @@ while center_freq <= eval(op.end_freq):
     # 34304 special case for when boost throws an exception when end time
     # termination happens normally
     if ret != 0 and ret != 34304:
-        raise RuntimeError('thor3.py exited with non-zero status: {0}'.format(ret))
+        raise RuntimeError('thor.py exited with non-zero status: {0}'.format(ret))
     center_freq += interval
