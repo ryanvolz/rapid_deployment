@@ -3,19 +3,20 @@ import os
 import digital_rf as drf
 import datetime
 
-plot_opts = {
-'specgram': {'use_log': True, 'bins': '1024'},
-'spectrum': {'use_log': True, 'bins': '1024'},
-'voltage': {},
-'phase': {'bins': '128', 'use_log': True},
-'iq': {},
-'histogram': {'use_log': True, 'bins': '128'}
-}
+plots = [
+    dict(name='specgram', type='specgram', use_log=True, bins='1024'),
+    dict(name='spectrum', type='spectrum', use_log=True, bins='1024'),
+    dict(name='voltage', type='voltage'),
+    dict(name='phase', type='phase', use_log=True, bins='128'),
+    dict(name='iq', type='iq'),
+    dict(name='iq_bits', type='iq', use_log=True),
+    dict(name='histogram', type='histogram', use_log=True, bins='128'),
+]
 
 parser = ArgumentParser()
 parser.add_argument('dir')
-parser.add_argument('-t', dest='plot_time', default='1000')
-parser.add_argument('-s', dest='save_dir', default='')
+parser.add_argument('-t', dest='plot_time', default='1000', help='Time span to plot (milliseconds)')
+parser.add_argument('-s', dest='save_dir', default='.')
 args = parser.parse_args()
 
 chans = sorted(os.listdir(args.dir))
@@ -48,19 +49,18 @@ for chan in chans:
         print "sfreq: " + str(sfreq)
         num_samples = int(sfreq*int(args.plot_time)/1000)
         sample_range = '0:{:d}'.format(num_samples)
-        for plot_type in plot_opts.keys():
-            opts = plot_opts[plot_type]
-            command_line = ' '.join([plot_cmd, '-i', args.dir, '-p', plot_type, '-r', \
+        for opts in plots:
+            command_line = ' '.join([plot_cmd, '-i', args.dir, '-p', opts['type'], '-r', \
 sample_range, '-c', chan_string, '-a', start_time_string])
 
-            if 'use_log' in opts.keys() and opts['use_log']:
+            if 'use_log' in opts and opts['use_log']:
                 command_line += ' -l'
-            if 'dynamic_range' in opts.keys():
+            if 'dynamic_range' in opts:
                 command_line += ' -z ' + opts['dynamic_range']
-            if 'num_bins' in opts.keys():
+            if 'num_bins' in opts:
                 command_line += ' -b ' + opts['num_bins']
             if args.save_dir != "":
-                fname = '_'.join([plot_type,chan,str(cfreq)])
+                fname = '_'.join([opts['name'],chan,str(cfreq)])
                 command_line += ' -s ' + os.path.join(args.save_dir, fname + '.png')
             print command_line
             #rtn = 0
