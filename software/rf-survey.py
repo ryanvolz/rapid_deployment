@@ -19,12 +19,6 @@ parser.add_argument('-g', dest='gain', default='0')
 op = parser.parse_args()
 
 thorcommand = "thor.py"
-#start_freq = 50e6
-#end_freq = 860e6
-#interval = 4e6
-#sample_rate = 10e6
-#channels = "cha,chb"
-#devices = "\"A:RX1 A:RX2\""
 
 center_freq = eval(op.start_freq)
 interval = eval(op.interval)
@@ -32,8 +26,10 @@ while center_freq <= eval(op.end_freq):
     now = datetime.datetime.utcnow()
     now = now.replace(microsecond=0)
     starttime = (now + datetime.timedelta(seconds=10)).isoformat() + 'Z'
-    endtime = (now + datetime.timedelta(seconds=20)).isoformat() + 'Z'
-    bash_command = ' '.join([thorcommand, '-c', op.channels, '-d', op.devices, '-f', str(center_freq), '-g', op.gain, '-r', op.sample_rate, '-s', starttime, '-e', endtime, op.dir])
+    duration = 10
+    freq_str = '{0:0.0f}MHz'.format(center_freq/1e6)
+    channels = ','.join([ch + '_' + freq_str for ch in channels.split(',')])
+    bash_command = ' '.join([thorcommand, '-c', channels, '-d', op.devices, '-f', str(center_freq), '-g', op.gain, '-r', op.sample_rate, '-s', starttime, '-l', str(duration), '-b', '10e6', '-a', '"peak=0.0625"', op.dir])
     print bash_command
     ret = os.system(bash_command)
     # 34304 special case for when boost throws an exception when end time
