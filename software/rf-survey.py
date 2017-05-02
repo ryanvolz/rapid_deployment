@@ -31,7 +31,7 @@ while center_freq <= eval(op.end_freq):
     now = now.replace(microsecond=0)
     starttime = (now + datetime.timedelta(seconds=10)).isoformat() + 'Z'
     duration = 10
-    freq_str = '{0:0.0f}MHz'.format(center_freq/1e6)
+    freq_str = '{0:g}MHz'.format(center_freq/1e6)
     channels = ','.join([ch + '_' + freq_str for ch in op.channels.split(',')])
     bash_command = ' '.join([thorcommand, '-c', channels, '-d', op.devices, '-f', str(center_freq), '-g', op.gain, '-r', op.sample_rate, '-s', starttime, '-l', str(duration), '-b', '10e6', '-a', peakarg, op.dir])
     print bash_command
