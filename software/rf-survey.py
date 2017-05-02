@@ -1,43 +1,68 @@
 # Perform a survey over a range of frequncies and record data in DigitalRF format using thor
-# 2017 Gregory Allan
 
-import time
-import datetime
-import os
-from argparse import ArgumentParser
+import argparse
+import numpy as np
+import subprocess
 
-parser = ArgumentParser()
-parser.add_argument('dir')
-parser.add_argument('-r', dest='sample_rate', default='10e6')
-parser.add_argument('-c', dest='channels', default='cha,chb')
-parser.add_argument('-d', dest='devices', default="\"A:RX1 A:RX2\"")
-parser.add_argument('--f-start', dest='start_freq', default='50e6')
-parser.add_argument('--f-end', dest='end_freq', default='860e6')
-parser.add_argument('-i', dest='interval', default='5e6')
-parser.add_argument('-g', dest='gain', default='0', help='Analog gain (dB)')
-parser.add_argument('-G', dest='digital_gain', default='0', help='Digital gain (bits)')
+parser = argparse.ArgumentParser(
+    description='Run thor.py at a range of frequencies for a given time interval.',
+    epilog='Remaining arguments are passed to thor.py.',
+)
+parser.add_argument(
+    '-c', '--channel', dest='chs', action='append',
+    help='''Base channel names to use in data directory. The names will have
+            the frequency appended as "_{FREQ}MHz" for each interval.
+            (default: "ch0")''',
+)
+parser.add_argument(
+    '--f-start', dest='start_freq', default='50e6',
+    help='''Starting frequency. (default: %(default)s)''',
+)
+parser.add_argument(
+    '--f-end', dest='end_freq', default='860e6',
+    help='''Ending frequency. (default: %(default)s)''',
+)
+parser.add_argument(
+    '--f-interval', dest='interval', default='5e6',
+    help='''Frequency step. (default: %(default)s)''',
+)
+parser.add_argument(
+    '-l', '--duration', dest='duration',
+    default='10',
+    help='''Duration of recording for each interval, in seconds.
+            (default: %(default)s)''',
+)
+parser.add_argument(
+    '-e', '--endtime', dest='endtime',
+    metavar='', help=argparse.SUPPRESS,
+)
 
-op = parser.parse_args()
+op, thor_args = parser.parse_known_args()
 
-thorcommand = "thor.py"
+if op.chs is None:
+    op.chs = ['ch0']
+# separate any combined arguments
+op.chs = [b.strip() for a in op.chs for b in a.strip().split(',')]
 
-peakval = 2**(-int(op.digital_gain))
-peakarg = '"peak={0}"'.format(peakval)
-
-center_freq = eval(op.start_freq)
+start_freq = eval(op.start_freq)
+end_freq = eval(op.end_freq)
 interval = eval(op.interval)
-while center_freq <= eval(op.end_freq):
-    now = datetime.datetime.utcnow()
-    now = now.replace(microsecond=0)
-    starttime = (now + datetime.timedelta(seconds=10)).isoformat() + 'Z'
-    duration = 10
+
+for center_freq in np.arange(start_freq, end_freq + interval, interval):
     freq_str = '{0:g}MHz'.format(center_freq/1e6)
-    channels = ','.join([ch + '_' + freq_str for ch in op.channels.split(',')])
-    bash_command = ' '.join([thorcommand, '-c', channels, '-d', op.devices, '-f', str(center_freq), '-g', op.gain, '-r', op.sample_rate, '-s', starttime, '-l', str(duration), '-b', '10e6', '-a', peakarg, op.dir])
-    print bash_command
-    ret = os.system(bash_command)
+    channels = ','.join([ch + '_' + freq_str for ch in op.chs])
+
+    args = [
+        'thor.py',
+        '-c', channels,
+        '-f', str(center_freq),
+        '-l', op.duration,
+    ]
+    args += thor_args
+
+    print(' '.join(args))
+    ret = subprocess.call(args)
     # 34304 special case for when boost throws an exception when end time
     # termination happens normally
     if ret != 0 and ret != 34304:
         raise RuntimeError('thor.py exited with non-zero status: {0}'.format(ret))
-    center_freq += interval
