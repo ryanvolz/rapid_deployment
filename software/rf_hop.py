@@ -3,6 +3,7 @@
 import argparse
 import numpy as np
 import subprocess
+from itertools import cycle, islice
 
 def evalint(s):
     """Evaluate string to an integer."""
@@ -55,10 +56,9 @@ parser.add_argument(
             (default: 100e6)''',
 )
 parser.add_argument(
-    '-l', '--duration', dest='duration', type=evalint,
-    default='15*60*60 - 20',
-    help='''Duration of recording for each interval, in seconds.
-            (default: %(default)s)''',
+    '-l', '--duration', dest='durations', action=Extend, type=evalint,
+    help='''Duration of recording at each frequency, in seconds.
+            (default: 60)''',
 )
 parser.add_argument(
     '--num_cycles', type=evalint, default=10,
@@ -74,10 +74,16 @@ op, thor_args = parser.parse_known_args()
 
 if op.chs is None:
     op.chs = ['ch0']
+if op.centerfreqs is None:
+    op.centerfreqs = [100e6]
+if op.durations is None:
+    op.durations = [60]
+
+op.durations = list(islice(cycle(op.durations), 0, len(op.centerfreqs)))
 
 for k in range(op.num_cycles):
     cycle_str = '{0}'.format(k)
-    for center_freq in op.centerfreqs:
+    for center_freq, duration in zip(op.centerfreqs, op.durations):
         freq_str = '{0:g}MHz'.format(center_freq/1e6)
         channels = ','.join(['_'.join([ch, freq_str, cycle_str]) for ch in op.chs])
 
@@ -85,7 +91,7 @@ for k in range(op.num_cycles):
             'thor.py',
             '-c', channels,
             '-f', str(center_freq),
-            '-l', str(op.duration),
+            '-l', str(duration),
         ]
         args += thor_args
 
